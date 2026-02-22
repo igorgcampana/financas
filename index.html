@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Finanças — Categorizador de Gastos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#E5EBEA; --surface:#ffffff; --surface2:#f0f4f3; --border:#c8d4d2;
+  --primary:#20515F; --primary2:#174050; --muted:#737271;
+  --danger:#b84040; --success:#2a7a4f; --text:#2a2928;
+  --mono:'DM Mono',monospace; --serif:'Fraunces',serif;
+}
+body { background:var(--bg); color:var(--text); font-family:var(--serif); min-height:100vh; font-size:15px; }
+header { background:var(--primary); color:#DDD0C6; padding:26px 40px 22px; }
+header h1 { font-size:1.9rem; font-weight:600; letter-spacing:-.02em; font-style:italic; }
+header p { font-size:.8rem; opacity:.7; margin-top:4px; font-family:var(--mono); }
+.container { max-width:1080px; margin:0 auto; padding:28px 22px 60px; }
+.tabs { display:flex; gap:4px; margin-bottom:22px; }
+.tab { padding:7px 17px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); font-family:var(--mono); font-size:.74rem; cursor:pointer; transition:all .15s; color:var(--muted); }
+.tab:hover { background:var(--surface); color:var(--text); }
+.tab.active { background:var(--primary); color:#DDD0C6; border-color:var(--primary); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:16px; box-shadow:0 1px 4px rgba(32,81,95,.06); }
+.card h2 { font-size:.98rem; font-weight:600; color:var(--primary); margin-bottom:12px; }
+input[type="password"],input[type="text"],textarea,select {
+  font-family:var(--mono); background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:8px 12px; font-size:.79rem; color:var(--text); outline:none; transition:border .15s;
+}
+input[type="password"]:focus,input[type="text"]:focus,textarea:focus,select:focus { border-color:var(--primary); }
+.upload-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:13px; }
+.upload-zone { border:2px dashed var(--border); border-radius:10px; padding:24px 12px; text-align:center; cursor:pointer; transition:all .2s; background:var(--surface2); position:relative; }
+.upload-zone:hover { border-color:var(--primary); background:#e6edec; }
+.upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-zone .icon { font-size:1.7rem; margin-bottom:6px; display:block; }
+.upload-zone p { font-family:var(--mono); font-size:.71rem; color:var(--muted); }
+.upload-zone strong { font-size:.84rem; color:var(--text); display:block; margin-bottom:3px; }
+.file-name { font-size:.68rem; color:var(--primary); margin-top:5px; font-style:italic; min-height:14px; }
+.text-area-wrap { margin-top:13px; }
+.text-area-wrap textarea { width:100%; height:90px; resize:vertical; }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border-radius:8px; font-family:var(--mono); font-size:.77rem; cursor:pointer; border:none; transition:all .15s; }
+.btn-primary { background:var(--primary); color:#DDD0C6; }
+.btn-primary:hover { background:var(--primary2); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+.btn-outline:hover { border-color:var(--primary); color:var(--primary); }
+.btn-success { background:var(--success); color:#fff; }
+.btn-success:hover { background:#1f5e3a; }
+.btn-warn { background:#92400e; color:#fff; }
+.btn-sm-danger { background:transparent; border:1px solid #e8c4c4; color:var(--danger); font-size:.68rem; padding:3px 8px; border-radius:5px; cursor:pointer; font-family:var(--mono); }
+.rules-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.77rem; }
+.rules-table th { text-align:left; padding:7px 10px; background:var(--surface2); color:var(--muted); border-bottom:1px solid var(--border); }
+.rules-table td { padding:5px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.rules-table tr:last-child td { border-bottom:none; }
+.rules-table td input { padding:4px 8px; font-size:.74rem; width:100%; }
+.add-rule-row { display:flex; gap:9px; margin-top:12px; align-items:center; flex-wrap:wrap; }
+.add-rule-row input { flex:1; min-width:130px; }
+.status-bar { display:flex; align-items:center; gap:9px; padding:10px 14px; border-radius:8px; font-family:var(--mono); font-size:.76rem; margin-bottom:13px; }
+.status-bar.info { background:#e8f0ef; color:var(--primary); border:1px solid #b8d4cf; }
+.status-bar.error { background:#fbeaea; color:var(--danger); border:1px solid #e8c4c4; }
+.status-bar.success { background:#e6f4ed; color:var(--success); border:1px solid #b8dcc9; }
+.spinner { width:14px; height:14px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite; flex-shrink:0; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.results-wrap { overflow-x:auto; }
+table.results { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.74rem; }
+table.results th { background:var(--primary); color:#DDD0C6; padding:8px 11px; text-align:left; white-space:nowrap; }
+table.results td { padding:6px 11px; border-bottom:1px solid var(--border); vertical-align:middle; }
+table.results tr:nth-child(even) td { background:var(--surface2); }
+table.results td select { padding:3px 6px; font-size:.72rem; background:var(--surface); max-width:170px; }
+.cat-FilhosFixo{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-FilhosVariavel{background:#ede9fe;color:#5b21b6;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-MoradiaFixo{background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-AnandaFixo{background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-IgorFixo{background:#e0f2fe;color:#075985;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Transporte{background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Refeicoes{background:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Supermercado{background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Assinaturas{background:#fae8ff;color:#6b21a8;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Saude{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-MoradiaVariavel{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-IgorVariavel{background:#e0f2fe;color:#0c4a6e;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-AnandaVariavel{background:#fdf2f8;color:#9d174d;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Viagens{background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Extras{background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.cat-Imposto{background:#fde8d8;color:#9a3412;padding:2px 8px;border-radius:20px;font-size:.68rem}
+.actions-bar { display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap; }
+.summary-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.chip { font-family:var(--mono); font-size:.68rem; padding:3px 9px; border-radius:20px; background:var(--surface2); border:1px solid var(--border); }
+.cols-grid { display:flex; gap:14px; flex-wrap:wrap; }
+.cols-grid label { font-family:var(--mono); font-size:.78rem; display:flex; gap:6px; align-items:center; cursor:pointer; }
+.free-badge { display:inline-block; background:#e6f4ed; color:var(--success); border:1px solid #b8dcc9; border-radius:20px; font-family:var(--mono); font-size:.68rem; padding:2px 9px; margin-left:8px; vertical-align:middle; }
+/* Session banner */
+.session-banner { background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.session-banner p { font-family:var(--mono); font-size:.76rem; color:#0369a1; }
+.session-banner strong { color:#0c4a6e; }
+/* Steps guide */
+.steps { counter-reset:step; list-style:none; }
+.steps li { counter-increment:step; display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:.78rem; line-height:1.6; }
+.steps li:last-child { border-bottom:none; }
+.steps li::before { content:counter(step); min-width:26px; height:26px; background:var(--primary); color:#DDD0C6; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:500; flex-shrink:0; margin-top:1px; }
+.steps li .step-img { display:block; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:6px 12px; margin-top:6px; font-style:italic; color:var(--muted); font-size:.72rem; }
+kbd { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:.74rem; }
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal { background:var(--surface); border-radius:14px; padding:28px; max-width:560px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,.18); }
+.modal h3 { font-size:1.1rem; color:var(--primary); margin-bottom:16px; }
+.modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+@media(max-width:680px){
+  .upload-grid{grid-template-columns:1fr}
+  header{padding:16px 16px 14px}
+  .container{padding:14px 12px 40px}
+  .add-rule-row{flex-direction:column}
+  .session-banner{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Finanças &mdash; Categorizador <span class="free-badge">100% gratuito</span></h1>
+  <p>CSV · recibo · texto &rarr; IA categoriza &rarr; exporta para o Google Sheets</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('upload')">📂 Importar</button>
+    <button class="tab" onclick="switchTab('rules')">🗂 Regras</button>
+    <button class="tab" onclick="switchTab('result')">📊 Resultado</button>
+    <button class="tab" onclick="switchTab('sheets')">📗 Sheets</button>
+    <button class="tab" onclick="switchTab('config')">⚙️ Config</button>
+  </div>
+
+  <!-- ══ CONFIG ══════════════════════════════════════════ -->
+  <div id="tab-config" class="tab-content">
+    <div class="card">
+      <h2>🆓 Chave de API — Google Gemini (gratuito)</h2>
+      <div style="background:#e6f4ed;border:1px solid #b8dcc9;border-radius:8px;padding:14px 16px;margin-bottom:16px;font-family:var(--mono);font-size:.78rem;color:var(--success);line-height:1.8;">
+        <strong>Como obter sua chave (você já tem a sua criada!):</strong><br>
+        1. Acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary)">aistudio.google.com/app/apikey</a><br>
+        2. Clique no ícone de copiar ao lado da chave <strong>...CDTY</strong><br>
+        3. Cole abaixo e clique Salvar<br><br>
+        <strong>Limite gratuito:</strong> 1.500 req/dia · sem cartão · sem custo
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="password" id="apiKey" placeholder="AIzaSy..." style="flex:1" />
+        <button class="btn btn-primary" onclick="saveKey()">Salvar chave</button>
+      </div>
+      <p style="font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-top:8px;">
+        Salva <strong>apenas no seu navegador</strong>. Nunca enviada a nenhum servidor além do Google.
+      </p>
+    </div>
+    <div class="card">
+      <h2>🗓 Colunas da sua planilha</h2>
+      <p style="font-family:var(--mono);font-size:.76rem;color:var(--muted);margin-bottom:12px;">O CSV exportado terá exatamente essas colunas, na mesma ordem da sua planilha no Google Sheets.</p>
+      <div class="cols-grid">
+        <label><input type="checkbox" id="col-data" checked /> Data</label>
+        <label><input type="checkbox" id="col-desc" checked /> Descrição</label>
+        <label><input type="checkbox" id="col-cat" checked /> Categoria</label>
+        <label><input type="checkbox" id="col-valor" checked /> Valor (R$)</label>
+        <label><input type="checkbox" id="col-pag" /> Forma de Pagamento</label>
+        <label><input type="checkbox" id="col-resp" /> Responsável</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SHEETS GUIDE ═════════════════════════════════════ -->
+  <div id="tab-sheets" class="tab-content">
+    <div class="card">
+      <h2>📗 Como importar o CSV no Google Sheets</h2>
+      <p style="font-family:var(--mono);font-size:.77rem;color:var(--muted);margin-bottom:18px;">
+        Siga esses passos depois de baixar o CSV pelo botão <strong>⬇ Baixar CSV</strong> na aba Resultado.
+      </p>
+      <ol class="steps">
+        <li>
+          <div>
+            Abra sua planilha no <strong>Google Sheets</strong><br>
+            <span class="step-img">Acesse drive.google.com → abra sua planilha de gastos</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            Clique em <strong>Arquivo → Importar</strong> no menu superior
+          </div>
+        </li>
+        <li>
+          <div>
+            Selecione a aba <strong>"Fazer upload"</strong> e arraste o arquivo <code>gastos_categorizados.csv</code>
+          </div>
+        </li>
+        <li>
+          <div>
+            Na tela de opções, escolha:<br>
+            · <strong>Local de importação:</strong> <kbd>Anexar ao final da planilha</kbd> ← mais importante!<br>
+            · <strong>Tipo de separador:</strong> <kbd>Vírgula</kbd><br>
+            · <strong>Converter texto em números:</strong> Sim
+          </div>
+        </li>
+        <li>
+          <div>
+            Clique em <strong>Importar dados</strong> — os lançamentos aparecem nas próximas linhas disponíveis, sem sobrescrever nada ✅
+          </div>
+        </li>
+      </ol>
+    </div>
+    <div class="card" style="background:#f0f9ff;border-color:#bae6fd;">
+      <h2 style="color:#0369a1;">💡 Dica: Aba separada por mês</h2>
+      <p style="font-family:var(--mono);font-size:.77rem;color:#0369a1;line-height:1.7;">
+        Para não misturar meses, crie uma aba por mês no Sheets (ex: <em>Jan/2026</em>, <em>Fev/2026</em>).<br>
+        Na hora de importar, clique na aba do mês certo antes de fazer o upload.<br>
+        Assim cada importação vai para o lugar certo automaticamente.
+      </p>
+    </div>
+    <div class="card" style="background:#fefce8;border-color:#fde68a;">
+      <h2 style="color:#854d0e;">⚠️ Atenção: colunas precisam bater</h2>
+      <p style="font-family:var(--mono);font-size:.77rem;color:#854d0e;line-height:1.7;">
+        Para o "Anexar ao final" funcionar certo, os cabeçalhos do CSV precisam ser <strong>iguais</strong> aos da sua planilha.<br>
+        Configure as colunas na aba <strong>⚙️ Config</strong> com os mesmos nomes que você usa no Sheets.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ RULES ═══════════════════════════════════════════ -->
+  <div id="tab-rules" class="tab-content">
+    <div class="card">
+      <h2>🗂 Regras de Categorização</h2>
+      <p style="font-family:var(--mono);font-size:.76rem;color:var(--muted);margin-bottom:14px;">
+        Se a descrição do gasto <strong>contiver</strong> a palavra-chave, a categoria é aplicada na hora — sem IA, sem custo.
+        A IA só é chamada para gastos que não baterem em nenhuma regra.
+      </p>
+      <div style="max-height:400px;overflow-y:auto;">
+        <table class="rules-table">
+          <thead><tr><th>Palavra-chave (trecho da descrição)</th><th>Categoria na sua planilha</th><th></th></tr></thead>
+          <tbody id="rulesBody"></tbody>
+        </table>
+      </div>
+      <div class="add-rule-row">
+        <input type="text" id="newKeyword" placeholder="Ex: babá, gympass, escola..." />
+        <input type="text" id="newCategory" placeholder="Ex: FilhosFixo" list="cat-list" />
+        <datalist id="cat-list"></datalist>
+        <button class="btn btn-primary" onclick="addRule()">+ Adicionar regra</button>
+      </div>
+      <p style="font-family:var(--mono);font-size:.69rem;color:var(--muted);margin-top:8px;">Regras salvas automaticamente no seu navegador.</p>
+    </div>
+  </div>
+
+  <!-- ══ UPLOAD ═══════════════════════════════════════════ -->
+  <div id="tab-upload" class="tab-content active">
+    <div class="card">
+      <h2>📂 Anexar arquivos ou digitar gastos</h2>
+      <div class="upload-grid">
+        <div class="upload-zone">
+          <input type="file" accept=".csv,.txt" onchange="handleFile(event,'csv')" />
+          <span class="icon">📊</span>
+          <strong>Extrato CSV</strong>
+          <p>Arquivo .csv do banco ou cartão</p>
+          <div class="file-name" id="name-csv"></div>
+        </div>
+        <div class="upload-zone">
+          <input type="file" accept="image/*" multiple onchange="handleFile(event,'img')" />
+          <span class="icon">🧾</span>
+          <strong>Recibo / Foto de nota</strong>
+          <p>JPG ou PNG do comprovante</p>
+          <div class="file-name" id="name-img"></div>
+        </div>
+        <div class="upload-zone" style="cursor:default;pointer-events:none;">
+          <span class="icon">✏️</span>
+          <strong>Texto livre</strong>
+          <p>Digite ou cole os gastos abaixo</p>
+        </div>
+      </div>
+      <div class="text-area-wrap">
+        <textarea id="freeText" placeholder="Ex:&#10;15/06 Babá Evelyn 800,00&#10;16/06 Uber 32,50&#10;iFood jantar 47,00&#10;Netflix 55,90"></textarea>
+      </div>
+    </div>
+    <div id="status" style="display:none;"></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btnAI" onclick="processWithAI()">✨ Categorizar com IA (Gemini)</button>
+      <button class="btn btn-outline" onclick="processLocal()">⚡ Só regras (offline)</button>
+      <button class="btn btn-outline" onclick="clearAll()">Limpar</button>
+    </div>
+    <p id="noKeyHint" style="font-family:var(--mono);font-size:.72rem;color:var(--danger);margin-top:8px;display:none;">
+      ⚠ Nenhuma chave configurada. Configure na aba ⚙️ Config ou use "Só regras".
+    </p>
+  </div>
+
+  <!-- ══ RESULT ════════════════════════════════════════════ -->
+  <div id="tab-result" class="tab-content">
+    <div id="result-placeholder" class="card" style="text-align:center;padding:44px;color:var(--muted);">
+      <p style="font-family:var(--mono);font-size:.82rem;">Nenhum resultado ainda.<br>Vá para <strong>📂 Importar</strong> e clique em <em>Categorizar</em>.</p>
+    </div>
+    <div id="result-content" style="display:none;">
+
+      <!-- Session banner -->
+      <div class="session-banner" id="sessionBanner" style="display:none;">
+        <p>💾 <strong>Sessão salva</strong> — esses dados estão guardados no seu navegador. <span id="sessionInfo"></span></p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" style="font-size:.72rem;padding:5px 12px;" onclick="clearSession()">🗑 Limpar sessão</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:13px 20px;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <h2 style="margin:0;">📊 Resultado</h2>
+          <div class="summary-chips" id="summaryChips" style="margin:0;"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="results-wrap">
+          <table class="results">
+            <thead id="resultsHead"></thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="actions-bar">
+        <button class="btn btn-success" onclick="exportCSV()">⬇ Baixar CSV</button>
+        <button class="btn btn-outline" onclick="copyTable()">📋 Copiar para planilha</button>
+        <button class="btn btn-outline" onclick="switchTab('sheets')">📗 Como importar no Sheets</button>
+        <button class="btn btn-outline" onclick="switchTab('upload')">+ Nova importação</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação limpar sessão -->
+<div id="modalClear" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>🗑 Limpar sessão salva?</h3>
+    <p style="font-family:var(--mono);font-size:.8rem;color:var(--muted);line-height:1.6;">
+      Os <strong id="modalCount"></strong> lançamentos salvos serão removidos do navegador.<br>
+      Seus <strong>arquivos originais não são afetados</strong> — você pode reprocessar quando quiser.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn" style="background:var(--danger);color:#fff;" onclick="confirmClearSession()">Limpar mesmo assim</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────
+let csvData = null;
+let imgFiles = [];
+let resultRows = [];
+
+const SESSION_KEY = 'fin_session_rows';
+const RULES_KEY   = 'fin_rules';
+const API_KEY     = 'fin_gemini_key';
+
+// ── DEFAULT RULES ──────────────────────────────
+const DEFAULT_RULES = [
+  {keyword:"babá",          category:"FilhosFixo"},
+  {keyword:"baba",          category:"FilhosFixo"},
+  {keyword:"evelyn",        category:"FilhosFixo"},
+  {keyword:"escola andré",  category:"FilhosFixo"},
+  {keyword:"escola andre",  category:"FilhosFixo"},
+  {keyword:"aluguel",       category:"MoradiaFixo"},
+  {keyword:"condominio",    category:"MoradiaFixo"},
+  {keyword:"condomínio",    category:"MoradiaFixo"},
+  {keyword:"porto consorcio",category:"MoradiaFixo"},
+  {keyword:"fies",          category:"AnandaFixo"},
+  {keyword:"prudential",    category:"AnandaFixo"},
+  {keyword:"google ads",    category:"IgorFixo"},
+  {keyword:"doctoralia",    category:"IgorFixo"},
+  {keyword:"uber",          category:"Transporte"},
+  {keyword:"99",            category:"Transporte"},
+  {keyword:"estapar",       category:"Transporte"},
+  {keyword:"ifood",         category:"Refeicoes"},
+  {keyword:"padoca",        category:"Refeicoes"},
+  {keyword:"pao de acucar", category:"Supermercado"},
+  {keyword:"swift",         category:"Supermercado"},
+  {keyword:"netflix",       category:"Assinaturas"},
+  {keyword:"spotify",       category:"Assinaturas"},
+  {keyword:"youtube",       category:"Assinaturas"},
+  {keyword:"apple.com",     category:"Assinaturas"},
+  {keyword:"fralda",        category:"FilhosVariavel"},
+  {keyword:"pediatra",      category:"FilhosVariavel"},
+  {keyword:"clinica pedi",  category:"FilhosVariavel"},
+  {keyword:"farmacia",      category:"Saude"},
+  {keyword:"farma",         category:"Saude"},
+  {keyword:"drogaria",      category:"Saude"},
+  {keyword:"hotel",           category:"Viagens"},
+  {keyword:"airbnb",          category:"Viagens"},
+  {keyword:"latam",           category:"Viagens"},
+  {keyword:"gol",             category:"Viagens"},
+  {keyword:"imposto",         category:"Imposto"},
+  {keyword:"receita federal", category:"Imposto"},
+  {keyword:"iptu",            category:"Imposto"},
+  {keyword:"ipva",            category:"Imposto"},
+];
+
+// ── SESSION PERSISTENCE ────────────────────────
+function saveSession(rows){
+  const payload = { rows, savedAt: new Date().toISOString() };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(payload)); } catch(e){ console.warn('localStorage cheio:', e); }
+}
+function loadSession(){
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+function clearSession(){
+  document.getElementById('modalCount').textContent = resultRows.length + ' lançamentos';
+  document.getElementById('modalClear').style.display = 'flex';
+}
+function closeModal(){ document.getElementById('modalClear').style.display = 'none'; }
+function confirmClearSession(){
+  localStorage.removeItem(SESSION_KEY);
+  resultRows = [];
+  document.getElementById('result-placeholder').style.display = 'block';
+  document.getElementById('result-content').style.display = 'none';
+  closeModal();
+  switchTab('upload');
+}
+function updateSessionBanner(){
+  const session = loadSession();
+  const banner = document.getElementById('sessionBanner');
+  if(session && resultRows.length > 0){
+    const d = new Date(session.savedAt);
+    const fmt = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sessionInfo').textContent = `Última atualização: ${fmt}`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ── RULES ──────────────────────────────────────
+function loadRules(){ try{const s=localStorage.getItem(RULES_KEY);return s?JSON.parse(s):DEFAULT_RULES;}catch{return DEFAULT_RULES;} }
+function saveRulesStore(r){ localStorage.setItem(RULES_KEY,JSON.stringify(r)); }
+function getRules(){ return loadRules(); }
+function getAllCategories(){ return [...new Set(getRules().map(r=>r.category))].sort(); }
+
+function renderRules(){
+  const rules=getRules();
+  document.getElementById('rulesBody').innerHTML = rules.map((r,i)=>`
+    <tr>
+      <td><input type="text" value="${esc(r.keyword)}" onchange="updateRule(${i},'keyword',this.value)" style="width:100%"/></td>
+      <td><input type="text" value="${esc(r.category)}" onchange="updateRule(${i},'category',this.value)" list="cat-list" style="width:100%"/></td>
+      <td><button class="btn-sm-danger" onclick="deleteRule(${i})">✕</button></td>
+    </tr>`).join('');
+  document.getElementById('cat-list').innerHTML = getAllCategories().map(c=>`<option value="${esc(c)}"/>`).join('');
+}
+function updateRule(i,f,v){ const r=getRules(); r[i][f]=v; saveRulesStore(r); }
+function deleteRule(i){ const r=getRules(); r.splice(i,1); saveRulesStore(r); renderRules(); }
+function addRule(){
+  const kw = document.getElementById('newKeyword').value.trim().toLowerCase();
+  const cat = document.getElementById('newCategory').value.trim();
+  if(!kw||!cat){ alert('Preencha palavra-chave e categoria.'); return; }
+  const r=getRules(); r.unshift({keyword:kw, category:cat}); saveRulesStore(r);
+  document.getElementById('newKeyword').value='';
+  document.getElementById('newCategory').value='';
+  renderRules();
+}
+
+// ── API KEY ────────────────────────────────────
+function saveKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  if(!k) return;
+  localStorage.setItem(API_KEY, k);
+  document.getElementById('apiKey').value='';
+  document.getElementById('apiKey').placeholder='●●●●●●●●●● (salva)';
+  alert('✅ Chave salva! Você pode voltar para a aba Importar.');
+  checkKeyHint();
+}
+function getKey(){ return localStorage.getItem(API_KEY)||''; }
+function checkKeyHint(){
+  document.getElementById('noKeyHint').style.display = getKey() ? 'none' : 'block';
+}
+
+// ── TABS ───────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const idx=['upload','rules','result','sheets','config'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+}
+
+// ── FILES ──────────────────────────────────────
+function handleFile(event,type){
+  const files=event.target.files; if(!files.length) return;
+  if(type==='csv'){
+    const f=files[0]; document.getElementById('name-csv').textContent=f.name;
+    const r=new FileReader(); r.onload=e=>{csvData=parseCSV(e.target.result);}; r.readAsText(f,'UTF-8');
+  } else {
+    imgFiles=Array.from(files);
+    document.getElementById('name-img').textContent=imgFiles.map(f=>f.name).join(', ');
+  }
+}
+function parseCSV(text){
+  const lines=text.trim().split('\n'); if(lines.length<2) return[];
+  const sep=lines[0].includes(';')?';':',';
+  const headers=lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).filter(l=>l.trim()).map(line=>{
+    const vals=line.split(sep).map(v=>v.trim().replace(/^"|"$/g,''));
+    const obj={}; headers.forEach((h,i)=>{obj[h]=vals[i]||'';}); return obj;
+  });
+}
+function clearAll(){
+  csvData=null; imgFiles=[];
+  document.getElementById('freeText').value='';
+  document.getElementById('name-csv').textContent='';
+  document.getElementById('name-img').textContent='';
+  setStatus(null);
+}
+
+// ── STATUS ─────────────────────────────────────
+function setStatus(msg,type='info',loading=false){
+  const el=document.getElementById('status');
+  if(!msg){el.style.display='none';return;}
+  el.style.display='flex'; el.className='status-bar '+type;
+  el.innerHTML=(loading?'<div class="spinner"></div>':'')+`<span>${msg}</span>`;
+}
+
+// ── LOCAL CATEGORIZE ───────────────────────────
+function localCategorize(desc){
+  const low=desc.toLowerCase();
+  for(const rule of getRules()){ if(low.includes(rule.keyword.toLowerCase())) return rule.category; }
+  return null;
+}
+
+// ── BUILD ITEMS FROM CSV ───────────────────────
+function buildCSVItems(){
+  if(!csvData||!csvData.length) return [];
+  const colDesc=findCol(csvData[0],['lançamento','Lançamento','lancamento','Lancamento','Descrição','Descricao','descricao','description','Histórico','historico','memo','Memo']);
+  const colValor=findCol(csvData[0],['Valor','valor','Valor (R$)','Crédito','credito','Débito','debito']);
+  const colData=findCol(csvData[0],['Data','data','date','Data lançamento']);
+  return csvData.map(row=>({
+    data: row[colData]||'', desc: row[colDesc]||Object.values(row).join(' '),
+    valor: row[colValor]||'', pag:'', resp:''
+  }));
+}
+function findCol(row,candidates){
+  for(const c of candidates){ if(c in row) return c; }
+  return Object.keys(row)[0];
+}
+
+// ── FINALIZE ROWS ──────────────────────────────
+function finalizeRows(rows){
+  resultRows = rows;
+  saveSession(rows);          // ← salva automaticamente
+  renderResults(rows);
+  updateSessionBanner();
+}
+
+// ── PROCESS: RULES ONLY ────────────────────────
+function processLocal(){
+  const freeText=document.getElementById('freeText').value.trim();
+  if(!csvData&&!freeText){ setStatus('Adicione um CSV ou escreva gastos no campo de texto.','error'); return; }
+  let items=[...buildCSVItems()];
+  if(freeText) freeText.split('\n').filter(l=>l.trim()).forEach(l=>items.push({data:'',desc:l.trim(),valor:'',pag:'',resp:''}));
+  const rows = items.map(it=>({...it, categoria:localCategorize(it.desc)||''}));
+  const sem = rows.filter(r=>!r.categoria).length;
+  finalizeRows(rows);
+  setStatus(`✅ ${rows.length} lançamentos. ${sem?sem+' sem categoria — adicione mais regras ou use a IA.':'Todos categorizados!'}`, sem?'info':'success');
+  switchTab('result');
+}
+
+// ── PROCESS: WITH GEMINI ───────────────────────
+async function processWithAI(){
+  const key=getKey();
+  if(!key){ setStatus('Configure sua chave Gemini gratuita na aba ⚙️ Config.','error'); return; }
+  const freeText=document.getElementById('freeText').value.trim();
+  if(!csvData&&!imgFiles.length&&!freeText){ setStatus('Adicione um CSV, recibo ou escreva gastos.','error'); return; }
+  document.getElementById('btnAI').disabled=true;
+  try{
+    let allItems=[...buildCSVItems()];
+    if(imgFiles.length){
+      setStatus('Lendo recibos com Gemini…','info',true);
+      for(const f of imgFiles){ const its=await extractFromImageGemini(f,key); allItems=allItems.concat(its); }
+    }
+    if(freeText){
+      setStatus('Interpretando texto livre…','info',true);
+      const its=await extractFromTextGemini(freeText,key); allItems=allItems.concat(its);
+    }
+    const uncategorized=allItems.filter(it=>!localCategorize(it.desc));
+    let aiCats={};
+    if(uncategorized.length){
+      setStatus(`Categorizando ${uncategorized.length} gastos com IA…`,'info',true);
+      aiCats=await aiCategorizeGemini(uncategorized,key);
+    }
+    const rows=allItems.map(it=>({...it, categoria: localCategorize(it.desc)||aiCats[it.desc]||''}));
+    const sem=rows.filter(r=>!r.categoria).length;
+    finalizeRows(rows);
+    setStatus(`✅ ${rows.length} lançamentos processados! ${sem?sem+' sem categoria.':'Todos categorizados!'}`, sem?'info':'success');
+    switchTab('result');
+  }catch(e){
+    console.error(e);
+    setStatus('Erro: '+e.message,'error');
+  }
+  document.getElementById('btnAI').disabled=false;
+}
+
+// ── GEMINI FUNCTIONS ───────────────────────────
+async function extractFromImageGemini(file,key){
+  const b64=await fileToBase64(file);
+  const body={contents:[{parts:[
+    {inline_data:{mime_type:file.type, data:b64}},
+    {text:'Extraia todos os gastos desta imagem de recibo. Retorne APENAS JSON sem markdown: [{"data":"DD/MM/YYYY","desc":"descrição","valor":"123.45","pag":"Cartão"}]. Se não tiver campo, use string vazia. valor sem R$ e sem vírgula.'}
+  ]}]};
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
+  const json=extractJSON(resp);
+  return (json||[]).map(it=>({data:it.data||'',desc:it.desc||'',valor:it.valor||'',pag:it.pag||'',resp:''}));
+}
+async function extractFromTextGemini(text,key){
+  const body={contents:[{parts:[{text:`Extraia todos os gastos do texto. Retorne APENAS JSON sem markdown: [{"data":"DD/MM/YYYY","desc":"descrição","valor":"123.45","pag":""}]. Se não tiver campo, use string vazia. valor sem R$ e sem vírgula.\n\nTexto:\n${text}`}]}]};
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
+  const json=extractJSON(resp);
+  return (json||[{data:'',desc:text,valor:'',pag:''}]).map(it=>({...it,resp:''}));
+}
+async function aiCategorizeGemini(items,key){
+  const cats=getAllCategories().join(', ');
+  const rulesStr=getRules().slice(0,60).map(r=>`"${r.keyword}" → ${r.category}`).join('\n');
+  const prompt=`Você categoriza gastos financeiros pessoais de uma família brasileira.
+
+REGRAS (priorize):
+${rulesStr}
+
+CATEGORIAS DISPONÍVEIS: ${cats}, Outros
+
+Para cada gasto, escolha a categoria mais adequada. Se nenhuma servir, use "Outros".
+Retorne APENAS JSON sem markdown: {"descrição exata": "Categoria"}
+
+GASTOS:
+${items.map(it=>it.desc).join('\n')}`;
+  const body={contents:[{parts:[{text:prompt}]}]};
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
+  return extractJSON(resp)||{};
+}
+async function geminiCall(key,model,body){
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){ const err=await res.json().catch(()=>({})); throw new Error(err.error?.message||`Gemini error ${res.status}`); }
+  const data=await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+function extractJSON(text){
+  if(!text) return null;
+  try{
+    const clean=text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const m=clean.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    return m?JSON.parse(m[1]):JSON.parse(clean);
+  }catch{ return null; }
+}
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── RENDER RESULTS ─────────────────────────────
+function getActiveCols(){
+  return [
+    {key:'data',     label:'Data',           active:document.getElementById('col-data')?.checked??true},
+    {key:'desc',     label:'Descrição',       active:document.getElementById('col-desc')?.checked??true},
+    {key:'categoria',label:'Categoria',       active:document.getElementById('col-cat')?.checked??true},
+    {key:'valor',    label:'Valor (R$)',       active:document.getElementById('col-valor')?.checked??true},
+    {key:'pag',      label:'Forma Pagamento', active:document.getElementById('col-pag')?.checked??false},
+    {key:'resp',     label:'Responsável',     active:document.getElementById('col-resp')?.checked??false},
+  ].filter(c=>c.active);
+}
+function renderResults(rows){
+  document.getElementById('result-placeholder').style.display='none';
+  document.getElementById('result-content').style.display='block';
+  const counts={};
+  rows.forEach(r=>{const k=r.categoria||'Sem categoria';counts[k]=(counts[k]||0)+1;});
+  document.getElementById('summaryChips').innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="chip">${esc(k)}: ${v}</div>`).join('');
+  const cols=getActiveCols();
+  const cats=['', ...getAllCategories(), 'Outros'];
+  document.getElementById('resultsHead').innerHTML=`<tr>${cols.map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr>`;
+  document.getElementById('resultsBody').innerHTML=rows.map((row,i)=>`
+    <tr>
+      ${cols.map(c=>{
+        if(c.key==='categoria') return `<td>
+          <select onchange="updateRow(${i},'categoria',this.value)" style="${row.categoria?'':'color:var(--danger)'}">
+            ${cats.map(cat=>`<option value="${esc(cat)}" ${cat===row.categoria?'selected':''}>${esc(cat)||'— sem categoria —'}</option>`).join('')}
+          </select></td>`;
+        if(c.key==='desc') return `<td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(row[c.key])}">${esc(row[c.key])}</td>`;
+        return `<td>${esc(row[c.key])}</td>`;
+      }).join('')}
+      <td><button class="btn-sm-danger" onclick="deleteRow(${i})">✕</button></td>
+    </tr>`).join('');
+  updateSessionBanner();
+}
+function updateRow(i,f,v){
+  resultRows[i][f]=v;
+  saveSession(resultRows);   // ← salva ao editar categoria também
+  renderResults(resultRows);
+}
+function deleteRow(i){ resultRows.splice(i,1); saveSession(resultRows); renderResults(resultRows); }
+
+// ── EXPORT ─────────────────────────────────────
+function exportCSV(){
+  const cols=getActiveCols();
+  const header=cols.map(c=>c.label).join(',');
+  const rows=resultRows.map(r=>cols.map(c=>`"${(r[c.key]||'').replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob(['\uFEFF'+[header,...rows].join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='gastos_categorizados.csv'; a.click();
+}
+function copyTable(){
+  const cols=getActiveCols();
+  const header=cols.map(c=>c.label).join('\t');
+  const rows=resultRows.map(r=>cols.map(c=>r[c.key]||'').join('\t'));
+  navigator.clipboard.writeText([header,...rows].join('\n')).then(()=>alert('✅ Copiado! Cole direto no Google Sheets (Ctrl+V).'));
+}
+
+// ── INIT ───────────────────────────────────────
+renderRules();
+checkKeyHint();
+if(getKey()) document.getElementById('apiKey').placeholder='●●●●●●●●●● (já configurada)';
+
+// Restaurar sessão salva
+const savedSession = loadSession();
+if(savedSession && savedSession.rows && savedSession.rows.length > 0){
+  resultRows = savedSession.rows;
+  renderResults(resultRows);
+  // Mostrar aviso na aba de upload
+  setStatus(`💾 Você tem ${resultRows.length} lançamentos salvos da última sessão. Veja na aba 📊 Resultado.`, 'info');
+}
+</script>
+</body>
+</html>
