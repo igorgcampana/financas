@@ -590,13 +590,13 @@ async function extractFromImageGemini(file,key){
     {inline_data:{mime_type:file.type, data:b64}},
     {text:'Extraia todos os gastos desta imagem de recibo. Retorne APENAS JSON sem markdown: [{"data":"DD/MM/YYYY","desc":"descrição","valor":"123.45","pag":"Cartão"}]. Se não tiver campo, use string vazia. valor sem R$ e sem vírgula.'}
   ]}]};
-  const resp=await geminiCall(key,'gemini-1.5-flash',body);
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
   const json=extractJSON(resp);
   return (json||[]).map(it=>({data:it.data||'',desc:it.desc||'',valor:it.valor||'',pag:it.pag||'',resp:''}));
 }
 async function extractFromTextGemini(text,key){
   const body={contents:[{parts:[{text:`Extraia todos os gastos do texto. Retorne APENAS JSON sem markdown: [{"data":"DD/MM/YYYY","desc":"descrição","valor":"123.45","pag":""}]. Se não tiver campo, use string vazia. valor sem R$ e sem vírgula.\n\nTexto:\n${text}`}]}]};
-  const resp=await geminiCall(key,'gemini-1.5-flash',body);
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
   const json=extractJSON(resp);
   return (json||[{data:'',desc:text,valor:'',pag:''}]).map(it=>({...it,resp:''}));
 }
@@ -616,7 +616,7 @@ Retorne APENAS JSON sem markdown: {"descrição exata": "Categoria"}
 GASTOS:
 ${items.map(it=>it.desc).join('\n')}`;
   const body={contents:[{parts:[{text:prompt}]}]};
-  const resp=await geminiCall(key,'gemini-1.5-flash',body);
+  const resp=await geminiCall(key,'gemini-3-flash-preview',body);
   return extractJSON(resp)||{};
 }
 async function geminiCall(key,model,body){
